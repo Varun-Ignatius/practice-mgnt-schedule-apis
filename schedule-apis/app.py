@@ -77,8 +77,8 @@ def addNewUserSchedule():
 def updateUserSchedule():
   return "User schedule updated successfully"
 
-@app.route("/schedule/userSchedule/<string:userId>&<string:scheduleTime>", methods = ['DELETE'])
-def updateUserSchedule():
+@app.route("/schedule/userSchedule", methods = ['DELETE'])
+def deleteUserSchedule():
   return "User schedule deleted successfully"
 
 
