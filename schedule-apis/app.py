@@ -76,7 +76,9 @@ def getUserSchedule(userID):
 
 @app.route("/schedule/newUserSchedule", methods = ['POST'])
 def addNewUserSchedule():
-  scheduleId = request.json['scheduleId']
+
+  latestSchedule = Schedule.query.order_by(Schedule.scheduleId.desc()).first()
+  scheduleId = latestSchedule.scheduleId + 1
   userId = request.json['userId']
   userName = request.json['userName']
   scheduleActivity = request.json['activity']
@@ -99,8 +101,8 @@ def updateUserSchedule(schID):
   schedule = Schedule.query.get(schID)
   schedule.scheduleStatus = "Rescheduled"
   db.session.commit()
-
-  scheduleId = request.json['scheduleId']
+  latestSchedule = Schedule.query.order_by(Schedule.scheduleId.desc()).first()
+  scheduleId = latestSchedule.scheduleId + 1
   userId = request.json['userId']
   userName = request.json['userName']
   scheduleActivity = request.json['activity']
