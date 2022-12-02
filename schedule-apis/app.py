@@ -8,7 +8,7 @@ from sqlalchemy import extract
 
 app = Flask(__name__)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://49ken39w43vjxx7wo25d:pscale_pw_fWPEnRBxGKxtPiHrCtxWBHQCjUNQP8lUkaWg1Vw3yga@us-east.connect.psdb.cloud/schedule?ssl=true'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://2y756an3tyyund2hcbfd:pscale_pw_AbZjZYqRBBv9U7arQBoXd5N6iduTdOMHSqBuRoVs76u@us-east.connect.psdb.cloud/care-coordination-and-management?ssl=true'
 app.config['SQLALCHEMY_TRACK_MODIFICATION'] = False
 
 db= SQLAlchemy(app)
@@ -16,8 +16,11 @@ db= SQLAlchemy(app)
 ma = Marshmallow(app)
 
 class Schedule(db.Model):
-  scheduleId = db.Column(db.Integer, primary_key = True)
+  __tablename__ = "Schedule"
+  id = db.Column(db.Integer, primary_key = True)
   userName = db.Column(db.String(255))
+  createdAt = db.Column(db.DateTime)
+  modifiedAt = db.Column(db.DateTime)
   scheduleActivity = db.Column(db.String(255))
   providerGroup = db.Column(db.String(255))
   scheduleStatus = db.Column(db.String(255))
@@ -29,9 +32,11 @@ class Schedule(db.Model):
   roomNumber = db.Column(db.Integer)
 
 
-  def __init__(self, scheduleId, userName, scheduleActivity, providerGroup,scheduleStatus, scheduleDate, scheduleFrom, scheduleTo, userId, patientId, roomNumber):
-    self.scheduleId = scheduleId
+  def __init__(self, id, userName,createdAt, modifiedAt, scheduleActivity, providerGroup,scheduleStatus, scheduleDate, scheduleFrom, scheduleTo, userId, patientId, roomNumber):
+    self.id = id
     self.userName = userName
+    self.createdAt =createdAt
+    self.modifiedAt =modifiedAt
     self.scheduleActivity = scheduleActivity
     self.providerGroup = providerGroup
     self.scheduleStatus = scheduleStatus
@@ -44,7 +49,7 @@ class Schedule(db.Model):
 
 class ScheduleSchema(ma.Schema):
   class Meta:
-    fields = ('userName', 'scheduleActivity', 'scheduleDate', 'scheduleFrom', 'scheduleTo', 'roomNumber', 'scheduleStatus', 'scheduleId', 'userId', 'patientId')
+    fields = ('userName', 'scheduleActivity', 'scheduleDate', 'scheduleFrom', 'scheduleTo', 'roomNumber', 'scheduleStatus', 'id', 'userId', 'patientId' )
 
 schedule_Schema = ScheduleSchema()
 all_schedule_schema = ScheduleSchema(many = True)
@@ -66,9 +71,9 @@ def getMonthlySchedule(month):
   print(result)
   return jsonify(result)
 
-@app.route("/schedule/userSchedule/<string:userID>", methods = ['GET'])
-def getUserSchedule(userID):
-  all_Schedule = Schedule.query.filter_by(userId=userID, scheduleDate=datetime.date.today()).all()
+@app.route("/schedule/userSchedule/<string:userID>&<string:date>", methods = ['GET'])
+def getUserSchedule(userID,date):
+  all_Schedule = Schedule.query.filter_by(userId=userID, scheduleDate=datetime.datetime.strptime(date, '%Y-%m-%d').date()).all()
   result = all_schedule_schema.dump(all_Schedule)
   print(result)
   return jsonify(result)
@@ -77,10 +82,15 @@ def getUserSchedule(userID):
 @app.route("/schedule/newUserSchedule", methods = ['POST'])
 def addNewUserSchedule():
 
-  latestSchedule = Schedule.query.order_by(Schedule.scheduleId.desc()).first()
-  scheduleId = latestSchedule.scheduleId + 1
+  latestSchedule = Schedule.query.order_by(Schedule.id.desc()).first()
+  if latestSchedule is None:
+    id =1
+  else:
+    id = latestSchedule.id + 1
   userId = request.json['userId']
   userName = request.json['userName']
+  createdAt = datetime.date.today()
+  modifiedAt = datetime.date.today()
   scheduleActivity = request.json['activity']
   providerGroup = request.json['providerGroup']
   scheduleStatus = request.json['scheduleStatus']
@@ -89,7 +99,7 @@ def addNewUserSchedule():
   scheduleTo = request.json['scheduleTo']
   patientId = request.json['patientId']
   roomNumber = request.json['location']
-  new_Schedule = Schedule(scheduleId, userName, scheduleActivity, providerGroup, scheduleStatus,scheduleDate, scheduleFrom, scheduleTo, userId, patientId, roomNumber)
+  new_Schedule = Schedule(id, userName, createdAt, modifiedAt, scheduleActivity, providerGroup, scheduleStatus,scheduleDate, scheduleFrom, scheduleTo, userId, patientId, roomNumber)
 
   db.session.add(new_Schedule)
   db.session.commit()
@@ -100,11 +110,14 @@ def addNewUserSchedule():
 def updateUserSchedule(schID):
   schedule = Schedule.query.get(schID)
   schedule.scheduleStatus = "Rescheduled"
+  schedule.modifiedAt = datetime.date.today()
   db.session.commit()
   latestSchedule = Schedule.query.order_by(Schedule.scheduleId.desc()).first()
   scheduleId = latestSchedule.scheduleId + 1
   userId = request.json['userId']
   userName = request.json['userName']
+  createdAt = datetime.date.today()
+  modifiedAt = datetime.date.today()
   scheduleActivity = request.json['activity']
   providerGroup = request.json['providerGroup']
   scheduleStatus = request.json['scheduleStatus']
@@ -113,7 +126,7 @@ def updateUserSchedule(schID):
   scheduleTo = request.json['scheduleTo']
   patientId = request.json['patientId']
   roomNumber = request.json['location']
-  new_Schedule = Schedule(scheduleId, userName, scheduleActivity, providerGroup, scheduleStatus,scheduleDate, scheduleFrom, scheduleTo, userId, patientId, roomNumber)
+  new_Schedule = Schedule(id, userName, scheduleActivity, createdAt, modifiedAt, providerGroup, scheduleStatus,scheduleDate, scheduleFrom, scheduleTo, userId, patientId, roomNumber)
 
   db.session.add(new_Schedule)
   db.session.commit()
