@@ -27,7 +27,7 @@ class Schedule(db.Model):
   scheduleDate = db.Column(db.Date)
   scheduleFrom = db.Column(db.DateTime)
   scheduleTo = db.Column(db.DateTime)
-  userId = db.Column(db.Integer)
+  userId = db.Column(db.String(255))
   patientId = db.Column(db.Integer)
   roomNumber = db.Column(db.Integer)
 
