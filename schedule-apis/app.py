@@ -212,6 +212,7 @@ def deleteUserSchedule(scheduleID):
       return jsonify({"Message": "Invalid Schedule. Please select valid schedule."}) 
     else:
       schedule.scheduleStatus = "Cancelled"
+      schedule.modifiedAt = datetime.date.today()
       db.session.commit()
       return jsonify({"Message": "User schedule deleted successfully"}) 
   else:
